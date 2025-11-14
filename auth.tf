@@ -1,21 +1,8 @@
 # -------------------------------
-# Kubernetes Provider
-# -------------------------------
-provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_id
-}
-
-# -------------------------------
 # aws-auth ConfigMap
 # -------------------------------
 resource "kubernetes_config_map" "aws_auth" {
-  depends_on = [module.eks]  # make sure EKS cluster is ready
+  depends_on = [module.eks]  # ensure EKS cluster is ready
 
   metadata {
     name      = "aws-auth"
@@ -23,7 +10,7 @@ resource "kubernetes_config_map" "aws_auth" {
   }
 
   data = {
-    # Node group IAM role mapping
+    # Map EKS Node Role
     mapRoles = yamlencode([
       {
         rolearn  = module.iam.eks_node_role_arn
@@ -35,7 +22,7 @@ resource "kubernetes_config_map" "aws_auth" {
     # Map your AWS root user to Kubernetes admin
     mapUsers = yamlencode([
       {
-        userarn  = "arn:aws:iam::742674388365:root"  # <-- your root ARN
+        userarn  = "arn:aws:iam::742674388365:root"  # your root ARN
         username = "root"
         groups   = ["system:masters"]
       }
