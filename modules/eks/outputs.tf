@@ -37,19 +37,20 @@ output "cluster_arn" {
   value       = aws_eks_cluster.main.arn
 }
 
+# Fix these three outputs to handle count
 output "node_group_id" {
-  description = "EKS node group ID"
-  value       = aws_eks_node_group.main.id
+  description = "EKS node group IDs"
+  value       = aws_eks_node_group.main[*].id
 }
 
 output "node_group_arn" {
-  description = "ARN of the EKS node group"
-  value       = aws_eks_node_group.main.arn
+  description = "ARN of the EKS node groups"
+  value       = aws_eks_node_group.main[*].arn
 }
 
 output "node_group_status" {
-  description = "Status of the EKS node group"
-  value       = aws_eks_node_group.main.status
+  description = "Status of the EKS node groups"
+  value       = aws_eks_node_group.main[*].status
 }
 
 output "oidc_provider_arn" {
