@@ -1,69 +1,67 @@
 # ============================================================================
-# ROOT MODULE - terraform.tfvars
+# PROJECT CONFIGURATION
 # ============================================================================
-
-# Project Configuration
-project_name = "hello-devops"
-environment  = "production"
+project_name = "my-eks-project"
+environment  = "dev"
 aws_region   = "us-east-1"
 
-# VPC Configuration
+# ============================================================================
+# VPC CONFIGURATION
+# ============================================================================
 vpc_cidr             = "10.0.0.0/16"
-availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c"]
-public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+availability_zones   = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
 enable_nat_gateway   = true
-single_nat_gateway   = false # Use one NAT per AZ for HA
+single_nat_gateway   = false
 enable_dns_hostnames = true
 enable_dns_support   = true
 
-# EKS Configuration
-cluster_version           = "1.30"
-node_group_desired_size   = 1 # 2 nodes per AZ for HA
+# ============================================================================
+# EKS CONFIGURATION
+# ============================================================================
+cluster_version           = "1.28"
+node_group_desired_size   = 2
 node_group_min_size       = 1
-node_group_max_size       = 2
-node_instance_types       = ["t2.micro"]
+node_group_max_size       = 4
+node_instance_types       = ["t3.medium"]
 node_disk_size            = 20
 enable_cluster_encryption = true
+cluster_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
-# Control plane logging
-cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+# ============================================================================
+# SECURITY CONFIGURATION
+# ============================================================================
+allowed_ssh_ips = ["0.0.0.0/0"]  # Replace with your IP for production
 
-# Security
-allowed_ssh_ips = ["0.0.0.0/0"] # Change this to your IP range
-
-# Tags
-tags = {
-  Project     = "hello-devops"
-  Environment = "production"
-  ManagedBy   = "Terraform"
-  Owner       = "DevOps-Team"
-}
-
-# Add your IAM user for Console access
+# ============================================================================
+# IAM ACCESS CONFIGURATION - Grant Console Access
+# ============================================================================
+# Add your IAM user ARN here (get it with: aws sts get-caller-identity)
 additional_iam_users = [
   {
-    userarn  = "arn:aws:iam::123456789012:user/your-username"  # Replace with YOUR actual ARN from step 5
-    username = "console-admin"
-    groups   = ["system:masters"]
-  }
-]
-
-# Add your IAM user for Console access
-additional_iam_users = [
-  {
-    userarn  = "arn:aws:iam::742674388365:user/cli-user"  # Replace with YOUR actual ARN from step 5
+    userarn  = "arn:aws:iam::742674388365:user/cli-user"  # REPLACE THIS
     username = "cli-user"
     groups   = ["system:masters"]
   }
 ]
 
-# If you use IAM roles (SSO, assumed roles), add them here instead
+# If you use IAM roles (SSO, assumed roles), add them here
 additional_iam_roles = [
-  # Uncomment and modify if you use IAM roles:
+  # Uncomment and modify if needed:
   # {
   #   rolearn  = "arn:aws:iam::123456789012:role/YourRoleName"
   #   username = "admin-role"
   #   groups   = ["system:masters"]
   # }
 ]
+
+# ============================================================================
+# TAGS
+# ============================================================================
+tags = {
+  Project     = "EKS-Infrastructure"
+  Environment = "dev"
+  ManagedBy   = "Terraform"
+  Owner       = "DevOps-Team"
+}
