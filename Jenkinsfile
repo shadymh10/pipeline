@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 echo "🔹 Checking out repository..."
-                git branch: 'main', url: 'https://github.com/Ahmedlebshten/Jenkins-Pipeline-Project'
+                git branch: 'main', url: 'https://github.com/shadymh10/pipeline'
             }
         }
 
