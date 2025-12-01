@@ -2,7 +2,14 @@ pipeline {
 
     agent any
  
-  
+    environment {
+
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
+
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+
+    }
+ 
     stages {
  
         stage('Checkout Code') {
@@ -11,7 +18,7 @@ pipeline {
 
                 echo "🔹 Checking out repository..."
 
-                git branch: 'main', url: ' https://github.com/shadymh10/pipeline'
+                git branch: 'master', url: 'https://github.com/Ahmedlebshten/Jenkins-Pipeline-Project'
 
             }
 
