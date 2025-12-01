@@ -17,7 +17,10 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 echo "🔹 Initializing Terraform..."
-                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-access-key'
+                ]]) {
                     sh 'terraform init -reconfigure'
                 }
             }
@@ -26,7 +29,10 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 echo "🔹 Creating Terraform plan..."
-                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-access-key'
+                ]]) {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -35,7 +41,10 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 echo "🔹 Applying Terraform..."
-                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-access-key'
+                ]]) {
                     sh 'terraform apply -auto-approve tfplan'
                 }
                 echo "✅ Infrastructure deployed successfully!"
@@ -45,7 +54,10 @@ pipeline {
         stage('Terraform Destroy') {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
-                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-access-key'
+                ]]) {
                     sh 'terraform destroy -auto-approve'
                 }
                 echo "🔥 Infrastructure destroyed successfully!"
