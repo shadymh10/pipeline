@@ -2,8 +2,6 @@ pipeline {
     agent any
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
     }
     stages {
         stage('Checkout Code') {
@@ -15,26 +13,46 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 echo "🔹 Initializing Terraform..."
-                sh 'terraform init -reconfigure'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh 'terraform init -reconfigure'
+                }
             }
         }
         stage('Terraform Plan') {
             steps {
                 echo "🔹 Creating Terraform plan..."
-                sh 'terraform plan -out=tfplan'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh 'terraform plan -out=tfplan'
+                }
             }
         }
         stage('Terraform Apply') {
             steps {
                 echo "🔹 Applying Terraform..."
-                sh 'terraform apply -auto-approve tfplan'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh 'terraform apply -auto-approve tfplan'
+                }
                 echo "✅ Infrastructure deployed successfully!"
             }
         }
         stage('Terraform Destroy') {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
-                sh 'terraform destroy -auto-approve'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh 'terraform destroy -auto-approve'
+                }
                 echo "🔥 Infrastructure destroyed successfully!"
             }
         }
