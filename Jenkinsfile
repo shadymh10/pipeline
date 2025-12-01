@@ -17,10 +17,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 echo "🔹 Initializing Terraform..."
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-access-key'
-                ]]) {
+                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
                     sh 'terraform init -reconfigure'
                 }
             }
@@ -29,43 +26,31 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 echo "🔹 Creating Terraform plan..."
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-access-key'
-                ]]) {
+                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
                     sh 'terraform plan -out=tfplan'
                 }
             }
         }
 
-        /*
         stage('Terraform Apply') {
             steps {
                 echo "🔹 Applying Terraform..."
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-access-key'
-                ]]) {
+                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
                     sh 'terraform apply -auto-approve tfplan'
                 }
                 echo "✅ Infrastructure deployed successfully!"
             }
         }
-        */
 
         stage('Terraform Destroy') {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-access-key'
-                ]]) {
+                withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
                     sh 'terraform destroy -auto-approve'
                 }
                 echo "🔥 Infrastructure destroyed successfully!"
             }
         }
-
     }
 
     post {
