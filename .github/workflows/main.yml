@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch: # يسمح بالتشغيل اليدوي (مثلاً للتدمير)
 
 env:
   AWS_DEFAULT_REGION: us-east-1
@@ -17,17 +18,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
+      # 1️⃣ Checkout repository
       - name: 🔹 Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Terraform
+      # 2️⃣ Setup Terraform (استبدل بالنسخة الرسمية المتوفرة)
       - name: 🔹 Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.7.7 # change to your version
+          terraform_version: 1.6.9
 
-      # 3️⃣ Configure AWS credentials
+      # 3️⃣ Cache Terraform plugins/providers
+      - name: 🔹 Cache Terraform
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            .terraform
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf*') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+
+      # 4️⃣ Configure AWS credentials
       - name: 🔹 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -35,27 +47,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
-      # 4️⃣ Terraform Init
+      # 5️⃣ Terraform Init
       - name: 🔹 Terraform Init
         run: |
-          echo "AWS credentials loaded successfully"
+          echo "🔹 AWS credentials loaded successfully"
           terraform init -reconfigure
 
-      # 5️⃣ Terraform Plan
+      # 6️⃣ Terraform Plan
       - name: 🔹 Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 6️⃣ Terraform Apply
+      # 7️⃣ Terraform Apply (only on main branch push)
       - name: 🔹 Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
 
-      # 7️⃣ Terraform Destroy (optional, only on manual workflow dispatch)
+      # 8️⃣ Terraform Destroy (manual trigger only)
       - name: 🗑️ Terraform Destroy
         if: github.event_name == 'workflow_dispatch'
         run: terraform destroy -auto-approve
 
-      # 8️⃣ Post Steps
+      # 9️⃣ Post steps
       - name: ✅ Pipeline completed
         if: success()
         run: echo "🎉 Pipeline completed successfully!"
