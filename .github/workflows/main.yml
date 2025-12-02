@@ -41,11 +41,11 @@ jobs:
           rm -rf .terraform
           rm -f tfplan tf_apply.log tf_plan.log tf_init.log tf_validate.log tf_destroy.log
 
-      # 4️⃣ Install Terraform
       - name: 🔧 Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.6.9" # stable supported version
+          terraform_version: "1.6.10"
+
 
       # 5️⃣ Cache Terraform providers
       - name: 🔹 Cache Terraform providers
