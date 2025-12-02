@@ -1,4 +1,4 @@
-name: Terraform Pipeline
+name: Terraform Pipeline v5
 
 on:
   workflow_dispatch:
@@ -23,36 +23,59 @@ jobs:
 
     steps:
 
+      # 1️⃣ Checkout repository
       - name: 🔹 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      # 2️⃣ Configure AWS credentials
+      - name: 🔹 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 3️⃣ Clean Terraform cache and old files
       - name: 🗑 Clean Terraform cache
         run: |
           rm -rf .terraform
-          rm -f tfplan tf_apply.log tf_plan.log tf_init.log
+          rm -f tfplan tf_apply.log tf_plan.log tf_init.log tf_validate.log tf_destroy.log
 
+      # 4️⃣ Install Terraform
       - name: 🔧 Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.6.6"
+          terraform_version: "1.6.9" # stable supported version
 
+      # 5️⃣ Cache Terraform providers
+      - name: 🔹 Cache Terraform providers
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            .terraform
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf*') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+
+      # 6️⃣ Terraform Init
       - name: 🚀 Terraform Init
-        run: terraform init -input=false -reconfigure | tee tf_init.log
+        run: terraform init -input=false -reconfigure -upgrade | tee tf_init.log
 
+      # 7️⃣ Terraform Validate
       - name: 🔍 Terraform Validate
         run: terraform validate | tee tf_validate.log
 
+      # 8️⃣ Terraform Format Check (optional)
+      - name: 📝 Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # 9️⃣ Terraform Plan
       - name: 📄 Terraform Plan
         run: terraform plan -out=tfplan | tee tf_plan.log
 
-      - name: 📤 Upload Logs
+      # 10️⃣ Upload logs
+      - name: 📤 Upload Terraform logs
         uses: actions/upload-artifact@v4
         with:
           name: terraform-logs
@@ -61,7 +84,8 @@ jobs:
             tf_validate.log
             tf_plan.log
 
-      - name: 🚀 Optional Terraform Apply
+      # 11️⃣ Optional Apply
+      - name: 🚀 Terraform Apply
         if: ${{ github.event.inputs.apply == 'yes' }}
         run: terraform apply -auto-approve tfplan | tee tf_apply.log
 
@@ -72,7 +96,8 @@ jobs:
           name: terraform-apply-log
           path: tf_apply.log
 
-      - name: 🗑 Optional Terraform Destroy
+      # 12️⃣ Optional Destroy
+      - name: 🗑 Terraform Destroy
         if: ${{ github.event.inputs.destroy == 'yes' }}
         run: terraform destroy -auto-approve | tee tf_destroy.log
 
