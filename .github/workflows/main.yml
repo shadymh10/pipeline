@@ -1,77 +1,84 @@
 name: Terraform Pipeline
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch: # يسمح بالتشغيل اليدوي (مثلاً للتدمير)
-
-env:
-  AWS_DEFAULT_REGION: us-east-1
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply Terraform plan?"
+        required: false
+        default: "no"
+      destroy:
+        description: "Destroy infrastructure?"
+        required: false
+        default: "no"
 
 jobs:
   terraform:
-    name: Terraform CI/CD
     runs-on: ubuntu-latest
 
+    env:
+      TF_LOG: INFO
+      TF_WORKSPACE: default
+      AWS_REGION: us-east-1
+
     steps:
-      # 1️⃣ Checkout repository
-      - name: 🔹 Checkout repository
-        uses: actions/checkout@v3
 
-      # 2️⃣ Setup Terraform (استبدل بالنسخة الرسمية المتوفرة)
-      - name: 🔹 Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.6.9
+      - name: 🔹 Checkout Repository
+        uses: actions/checkout@v4
 
-      # 3️⃣ Cache Terraform plugins/providers
-      - name: 🔹 Cache Terraform
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.terraform.d/plugin-cache
-            .terraform
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf*') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
-
-      # 4️⃣ Configure AWS credentials
-      - name: 🔹 Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: us-east-1
 
-      # 5️⃣ Terraform Init
-      - name: 🔹 Terraform Init
+      - name: 🗑 Clean Terraform cache
         run: |
-          echo "🔹 AWS credentials loaded successfully"
-          terraform init -reconfigure
+          rm -rf .terraform
+          rm -f tfplan tf_apply.log tf_plan.log tf_init.log
 
-      # 6️⃣ Terraform Plan
-      - name: 🔹 Terraform Plan
-        run: terraform plan -out=tfplan
+      - name: 🔧 Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.6.6"
 
-      # 7️⃣ Terraform Apply (only on main branch push)
-      - name: 🔹 Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve tfplan
+      - name: 🚀 Terraform Init
+        run: terraform init -input=false -reconfigure | tee tf_init.log
 
-      # 8️⃣ Terraform Destroy (manual trigger only)
-      - name: 🗑️ Terraform Destroy
-        if: github.event_name == 'workflow_dispatch'
-        run: terraform destroy -auto-approve
+      - name: 🔍 Terraform Validate
+        run: terraform validate | tee tf_validate.log
 
-      # 9️⃣ Post steps
-      - name: ✅ Pipeline completed
-        if: success()
-        run: echo "🎉 Pipeline completed successfully!"
+      - name: 📄 Terraform Plan
+        run: terraform plan -out=tfplan | tee tf_plan.log
 
-      - name: ❌ Pipeline failed
-        if: failure()
-        run: echo "❌ Pipeline failed!"
+      - name: 📤 Upload Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-logs
+          path: |
+            tf_init.log
+            tf_validate.log
+            tf_plan.log
+
+      - name: 🚀 Optional Terraform Apply
+        if: ${{ github.event.inputs.apply == 'yes' }}
+        run: terraform apply -auto-approve tfplan | tee tf_apply.log
+
+      - name: 📤 Upload Apply Log
+        if: ${{ github.event.inputs.apply == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-apply-log
+          path: tf_apply.log
+
+      - name: 🗑 Optional Terraform Destroy
+        if: ${{ github.event.inputs.destroy == 'yes' }}
+        run: terraform destroy -auto-approve | tee tf_destroy.log
+
+      - name: 📤 Upload Destroy Log
+        if: ${{ github.event.inputs.destroy == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-destroy-log
+          path: tf_destroy.log
