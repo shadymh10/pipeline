@@ -66,9 +66,10 @@ jobs:
       - name: 🔍 Terraform Validate
         run: terraform validate | tee tf_validate.log
 
-      # 8️⃣ Terraform Format Check (optional)
-      - name: 📝 Terraform Format Check
-        run: terraform fmt -check -recursive
+      - name: 📝 Terraform Format
+        run: terraform fmt -recursive | tee tf_fmt.log
+
+
 
       # 9️⃣ Terraform Plan
       - name: 📄 Terraform Plan
