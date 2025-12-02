@@ -1,0 +1,65 @@
+name: Terraform Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+
+jobs:
+  terraform:
+    name: Terraform CI/CD
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: 🔹 Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Terraform
+      - name: 🔹 Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.7 # change to your version
+
+      # 3️⃣ Configure AWS credentials
+      - name: 🔹 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      # 4️⃣ Terraform Init
+      - name: 🔹 Terraform Init
+        run: |
+          echo "AWS credentials loaded successfully"
+          terraform init -reconfigure
+
+      # 5️⃣ Terraform Plan
+      - name: 🔹 Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # 6️⃣ Terraform Apply
+      - name: 🔹 Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+
+      # 7️⃣ Terraform Destroy (optional, only on manual workflow dispatch)
+      - name: 🗑️ Terraform Destroy
+        if: github.event_name == 'workflow_dispatch'
+        run: terraform destroy -auto-approve
+
+      # 8️⃣ Post Steps
+      - name: ✅ Pipeline completed
+        if: success()
+        run: echo "🎉 Pipeline completed successfully!"
+
+      - name: ❌ Pipeline failed
+        if: failure()
+        run: echo "❌ Pipeline failed!"
