@@ -44,7 +44,7 @@ jobs:
       - name: 🔧 Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.6.10"
+          terraform_version: "1.6.6"
 
 
       # 5️⃣ Cache Terraform providers
